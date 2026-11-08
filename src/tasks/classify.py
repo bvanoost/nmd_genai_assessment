@@ -89,7 +89,8 @@ def classify_document(event: dict) -> dict:
     )
     if text_response is None:
         raise ValueError("Bedrock classification response did not contain text.")
-    # TODO: check for stop_reason = max_token
+    if model_response.get("stop_reason") == "max_tokens":
+        raise ValueError("Bedrock classification response was truncated (max_tokens).")
 
     result = json.loads(text_response) # TODO: would fail if preamble from llm
     if not isinstance(result, dict):
