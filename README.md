@@ -54,7 +54,7 @@ cp env.example .env
 cp terraform/live/candidate/terraform.tfvars.example terraform/live/candidate/terraform.tfvars
 ```
 
-Edit both files with your candidate name and application prefix (`nmd-genai-<your-name>`).
+Edit both files with your candidate name and application prefix (`nmd-genai-brads-van-oosten`).
 
 **4. Deploy infrastructure**
 
@@ -102,7 +102,7 @@ Upload a sample document to trigger the pipeline:
 ```bash
 AWS_PROFILE=nmd-codescreen aws s3 cp \
   data/cybersecurity-advisory.json \
-  s3://nmd-genai-<your-name>-documents/uploads/cybersecurity-advisory.json
+  s3://nmd-genai-brads-van-oosten-documents/uploads/cybersecurity-advisory.json
 ```
 
 ## Verification
@@ -116,7 +116,7 @@ AWS_PROFILE=nmd-codescreen aws stepfunctions list-executions \
   --query 'executions[0].{status:status,start:startDate}'
 
 # Check results in S3
-AWS_PROFILE=nmd-codescreen aws s3 ls s3://nmd-genai-<your-name>-documents/results/
+AWS_PROFILE=nmd-codescreen aws s3 ls s3://nmd-genai-brads-van-oosten-documents/results/
 ```
 
 ## Allowed Bedrock Model

@@ -33,7 +33,7 @@ def classify_document(event: dict) -> dict:
         Classification result with document_type and classification_confidence.
     """
     document_id = event["document_id"]
-    content = event.get("content", "")
+    content = event.get("content", "") # TODO: trim content so that large inputs dont use all my tokens!
     if not isinstance(content, str) or not content.strip():
         raise ValueError("Document content must be a non-empty string.")
 
@@ -57,6 +57,7 @@ def classify_document(event: dict) -> dict:
         "Do not include markdown or any text outside the JSON object.\n\n"
         f"Document:\n{json.dumps({'title': title, 'content': content}, ensure_ascii=False)}"
     )
+    # TODO: set temp for repeatable results
     bedrock_response = get_bedrock_client().invoke_model(
         modelId=CLASSIFY_MODEL_ID,
         contentType="application/json",
@@ -80,8 +81,9 @@ def classify_document(event: dict) -> dict:
     )
     if text_response is None:
         raise ValueError("Bedrock classification response did not contain text.")
+    # TODO: check for stop_reason = max_token
 
-    result = json.loads(text_response)
+    result = json.loads(text_response) # TODO: would fail if preamble from llm
     if not isinstance(result, dict):
         raise ValueError("Bedrock classification response must be a JSON object.")
 
