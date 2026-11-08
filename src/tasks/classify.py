@@ -17,6 +17,7 @@ ALLOWED_DOCUMENT_TYPES = {
     "financial_filing",
     "unknown",
 }
+MAX_CONTENT_CHARS = 20_000
 
 
 def classify_document(event: dict) -> dict:
@@ -33,9 +34,15 @@ def classify_document(event: dict) -> dict:
         Classification result with document_type and classification_confidence.
     """
     document_id = event["document_id"]
-    content = event.get("content", "") # TODO: trim content so that large inputs dont use all my tokens!
+    content = event.get("content", "")
     if not isinstance(content, str) or not content.strip():
         raise ValueError("Document content must be a non-empty string.")
+    if len(content) > MAX_CONTENT_CHARS:
+        logger.info(
+            "Truncating document %s from %d to %d chars",
+            document_id, len(content), MAX_CONTENT_CHARS,
+        )
+        content = content[:MAX_CONTENT_CHARS]
 
     title = event.get("title", "")
     if not isinstance(title, str):
