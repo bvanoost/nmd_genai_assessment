@@ -20,6 +20,16 @@ ALLOWED_DOCUMENT_TYPES = {
 MAX_CONTENT_CHARS = 20_000
 
 
+def _extract_json(text: str) -> dict:
+    """Parse the first-to-last-brace JSON object, tolerating fences or a preamble."""
+    start, end = text.find("{"), text.rfind("}")
+    if start == -1 or end <= start:
+        raise ValueError("Bedrock classification response contained no JSON object.")
+    try:
+        return json.loads(text[start : end + 1])
+    except json.JSONDecodeError as exc:
+        raise ValueError("Bedrock classification response was not valid JSON.") from exc
+
 def classify_document(event: dict) -> dict:
     """Classify a document using Bedrock LLM.
 
@@ -92,7 +102,7 @@ def classify_document(event: dict) -> dict:
     if model_response.get("stop_reason") == "max_tokens":
         raise ValueError("Bedrock classification response was truncated (max_tokens).")
 
-    result = json.loads(text_response) # TODO: would fail if preamble from llm
+    result = _extract_json(text_response)
     if not isinstance(result, dict):
         raise ValueError("Bedrock classification response must be a JSON object.")
 
