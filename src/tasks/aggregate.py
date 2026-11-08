@@ -11,22 +11,23 @@ logger = logging.getLogger(__name__)
 def aggregate_results(event: dict) -> dict:
     """Aggregate extraction results and write summary to S3.
 
-    The candidate must implement writing the pipeline results to S3 as a JSON
-    file in the results/ prefix.
-
     Args:
         event: Full pipeline state with preprocess, classify, and extract results.
 
     Returns:
         Summary of the pipeline execution.
     """
-    logger.info("Aggregating results")
-
     preprocess = event.get("preprocess_result", {})
     classify = event.get("classify_result", {})
     extract = event.get("extract_result", {})
-    document_id = preprocess.get("document_id", "unknown")
-    s3_bucket = preprocess.get("s3_bucket", "")
+    document_id = preprocess.get("document_id")
+    s3_bucket = preprocess.get("s3_bucket")
+    if not isinstance(document_id, str) or not document_id:
+        raise ValueError("Pipeline event must include a document_id.")
+    if not isinstance(s3_bucket, str) or not s3_bucket:
+        raise ValueError("Pipeline event must include an s3_bucket.")
+
+    logger.info("Aggregating results for document: %s", document_id)
 
     summary = {
         "document_id": document_id,
@@ -37,14 +38,12 @@ def aggregate_results(event: dict) -> dict:
         "status": "completed",
     }
 
-    # TODO: Write the summary to S3 at results/{document_id}.json
-    # 1. Serialize summary as JSON
-    # 2. Put the object to s3://{s3_bucket}/results/{document_id}.json
-    # 3. Return the summary dict
-    #
-    # Hint: Use get_s3_client().put_object(...)
-
-    raise NotImplementedError(
-        "aggregate_results() is not implemented. "
-        "Write the summary JSON to S3 at results/{document_id}.json and return it."
+    result_key = f"results/{document_id}.json"
+    get_s3_client().put_object(
+        Bucket=s3_bucket,
+        Key=result_key,
+        Body=json.dumps(summary),
+        ContentType="application/json",
     )
+    logger.info("Wrote pipeline results to s3://%s/%s", s3_bucket, result_key)
+    return summary
