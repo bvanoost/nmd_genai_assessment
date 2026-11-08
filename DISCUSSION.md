@@ -27,14 +27,14 @@ How would you improve the classification prompt to handle ambiguous documents th
 **Your answer:**
 I would improve the classification prompt by clearly defining each document type, including its distinguishing features and examples of documents that could fit multiple categories. I would add explicit tie-breaking rules, such as prioritizing the document’s primary purpose over incidental content, and specify whether a single best match or multiple labels are allowed. If there is insufficient evidence for a reliable decision, I would allow an “unknown” or “needs review” classification rather than forcing a guess. Alternatively, I would consider allowing multiple classifications when each meets a defined confidence threshold. For example, a document could be classified as both security and financial if there is sufficient evidence for both.
 
-I would not assume that the LLM will consistently return valid JSON. In my implementation, I tried to handle this by removing any preamble from the response. To improve reliability, I would explicitly define the expected JSON structure in the prompt and validate the output before processing it. Additional pattern matching could help extract specific fields from malformed responses, but I would prefer schema validation and controlled retries over relying on regex alone.
+I would not assume that the LLM will consistently return valid JSON. In my implementation, I tried to handle this by removing any preamble from the response. To improve reliability, I would explicitly define the expected JSON structure in the prompt and validate the output before processing it. Additional pattern matching could help extract specific fields from malformed responses.
 
 ### 4. Error Handling
 
 How would you handle Bedrock throttling (429 errors) in a production pipeline? What retry strategy would you implement, and how would it interact with Step Functions' built-in error handling?
 
 **Your answer:**
- I would use Step Functions as the primary retry layer, configuring its retry policy with a starting interval, that increases its wight timew with increasing try number, a maximum delay, and a limited number of attempts.
+ I would use Step Functions as the primary retry layer, configuring its retry policy with a starting interval, that increases its weight time with increasing try number, a maximum delay, and a limited number of attempts.
 
 
 ### 5. Enterprise Readiness
@@ -55,6 +55,7 @@ Must fix:
 -validate classification output for distinct categories
 -prevent duplicate processing
 -add retries
+-CI/CD
 
 should fix:
 -more testing for borderline documents
