@@ -64,7 +64,7 @@ def classify_document(event: dict) -> dict:
         "Do not include markdown or any text outside the JSON object.\n\n"
         f"Document:\n{json.dumps({'title': title, 'content': content}, ensure_ascii=False)}"
     )
-    # TODO: set temp for repeatable results
+
     bedrock_response = get_bedrock_client().invoke_model(
         modelId=CLASSIFY_MODEL_ID,
         contentType="application/json",
@@ -73,6 +73,7 @@ def classify_document(event: dict) -> dict:
             {
                 "anthropic_version": "bedrock-2023-05-31",
                 "max_tokens": 128,
+                "temperature": 0,
                 "messages": [{"role": "user", "content": prompt}],
             }
         ),
