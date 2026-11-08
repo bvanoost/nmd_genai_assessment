@@ -125,15 +125,18 @@ I would validate every extraction against a strict schema before writing the fin
 This processes one document per Step Functions execution. Design a batch pipeline that handles 100,000 documents per day. What changes to the Step Functions architecture? Where would you parallelize, and where are the bottlenecks?
 
 **Your answer:**
+I would replace the one-document-per-execution model with a batch-oriented design using Step Functions Distributed Map or a queue-driven fan-out pattern, where each batch holds multiple documents and the Lambda workers process them in parallel while respecting Bedrock and Lambda concurrency limits. The main bottlenecks would be Bedrock rate limiting, network I/O to S3, and Lambda concurrency/timeout.
 
 ### DE-3. Observability & Data Lineage
 
 How would you monitor this pipeline in production? What metrics, alerts, and dashboards would you build? A downstream team also needs to know which model version and prompt version produced each extraction. How would you track that lineage?
 
 **Your answer:**
+I would have the pipeline record metrics on documents processed, latency per stage, retries, failure rate, model cost, and output-validation failures, and I would alert on sustained queue growth, step failures, and unusually high latency or error rate. For lineage, every output record should include document ID, source bucket/key, model ID, model version, prompt version, schema version, timestamp, and Step Functions execution ID, and I would store that metadata alongside the extracted JSON in S3 or a metadata store so downstream teams can trace exactly what produced each result for ease of use or in a data warehouse if it were to be used for monitoring dashboards.
 
 ### DE-4. Caching & Deduplication
 
 If the same document is uploaded twice, the pipeline currently processes it again at full cost. How would you implement caching or deduplication? Consider where in the pipeline to check, what to use as a cache key, and the tradeoffs of different storage options (DynamoDB, S3 metadata, Elasticache).
 
 **Your answer:**
+I would compute a content hash or canonical document hash at upload time and check it before invoking expensive model calls, which is the cheapest place to deduplicate because it avoids re-running the full pipeline. As for starage, A DynamoDB table with a conditional write is a good fit for a dedupe ledger because it gives atomicity and metadata like document ID, hash, status, and last-updated timestamp. S3 would be a simple and chaep options for small amounts of records but would be limited if large amounts of documents were used or if we wanted analysis built off of it. I would use Elasticache only when I need ultra-fast repeated lookups for very hot keys, but I’d avoid relying on it as the system of record because it is eventually consistent.
