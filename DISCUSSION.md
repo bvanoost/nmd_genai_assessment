@@ -7,30 +7,35 @@ Aim for 2-4 sentences per answer unless otherwise noted. We value clarity and de
 ---
 
 ## Shared Questions (everyone answers)
-
 ### 1. Troubleshooting
 
 If you could not complete the assessment or got stuck at any point, what went wrong and what did you try to troubleshoot?
 
-**Your answer:**
+I ran into several setup and deployment issues during the assessment. Docker repeatedly hung during `make deploy` without producing an error message, which took approximately 20 minutes to troubleshoot and was resolved by restarting Docker Desktop. I also could not run `make docker-push` without the required credentials, so I had to create them before proceeding. While troubleshooting these issues, I used ChatGPT to help diagnose the errors and continued implementing and pushing the three functions. I then encountered a Lambda deployment error, `":latest does not exist. Provide a valid source image."`, because the order of operations in the README was incorrect. Changing the deployment order resolved that issue. Finally, I could not retrieve the state machine’s output through the CLI or access the AWS console using the provided credentials. I therefore focused on completing the functions as thoroughly as possible, but was unable to verify their final outputs or the end-to-end results.
 
 ### 2. Proof of Completion
 
 Paste the S3 URI to one of your result files (e.g., `s3://nmd-genai-<your-name>-documents/results/<document-id>.json`).
 
 **Your answer:**
+N/A could not get it to work =[
 
 ### 3. Prompt Engineering
 
 How would you improve the classification prompt to handle ambiguous documents that could match multiple types? What techniques would you use to ensure consistent JSON output from the LLM?
 
 **Your answer:**
+I would improve the classification prompt by clearly defining each document type, including its distinguishing features and examples of documents that could fit multiple categories. I would add explicit tie-breaking rules, such as prioritizing the document’s primary purpose over incidental content, and specify whether a single best match or multiple labels are allowed. If there is insufficient evidence for a reliable decision, I would allow an “unknown” or “needs review” classification rather than forcing a guess. Alternatively, I would consider allowing multiple classifications when each meets a defined confidence threshold. For example, a document could be classified as both security and financial if there is sufficient evidence for both.
+
+I would not assume that the LLM will consistently return valid JSON. In my implementation, I tried to handle this by removing any preamble from the response. To improve reliability, I would explicitly define the expected JSON structure in the prompt and validate the output before processing it. Additional pattern matching could help extract specific fields from malformed responses, but I would prefer schema validation and controlled retries over relying on regex alone.
 
 ### 4. Error Handling
 
 How would you handle Bedrock throttling (429 errors) in a production pipeline? What retry strategy would you implement, and how would it interact with Step Functions' built-in error handling?
 
 **Your answer:**
+ I would use Step Functions as the primary retry layer, configuring its retry policy with a starting interval, that increases its wight timew with increasing try number, a maximum delay, and a limited number of attempts.
+
 
 ### 5. Enterprise Readiness
 
@@ -44,12 +49,33 @@ Write a prioritized list of changes organized by:
 Consider security, error handling, observability, testing, CI/CD, and infrastructure hardening.
 
 **Your answer:**
+Must fix:
+-verify the complete workflow since I could not
+-handle failures reliably (fail loud and fast)
+-validate classification output for distinct categories
+-prevent duplicate processing
+-add retries
+
+should fix:
+-more testing for borderline documents
+-add logs for documents/ runtimes ect (possible dashboard)
+
+
+nice to have:
+-optimize cost/performance
+-have a way to reprocess failed documents
+-document operations with architecture diagrams, troubleshooting runbooks, and recovery procedures
 
 ### 4. Terraform — Adding a Pipeline Step
 
 A new "validate" Lambda needs to be added to the pipeline between Extract and Aggregate. It will validate the extracted fields against a schema before writing results. List every file you'd need to change and what you'd add to each.
 
 **Your answer:**
+I would update the Python code, Terraform configuration, deployment workflow, and tests. In Python, I would add src/tasks/validate.py for schema validation and src/lambdas/validate/handler.py for the Lambda entry point
+
+In Terraform, I would define the new Lambda resource and its CloudWatch log group in terraform/modules/lambda/main.tf, add any necessary variables in terraform/modules/lambda/variables.tf, and expose the Lambda ARN in terraform/modules/lambda/outputs.tf. I would then update terraform/modules/step-functions/state_machine.asl.json to insert the Validate state between Extract and Aggregate. I would also update the Step Functions module’s main.tf and variables.tf to accept the new Lambda ARN and grant the state machine permission to invoke it.
+
+Finally, I would update terraform/live/candidate/main.tf to connect the new Lambda to the Step Functions module and update the Makefile to include it in the deployment and image-update workflow, if those updates are managed there. 
 
 ---
 
@@ -92,6 +118,7 @@ List the key points you'd convey to a client's VP of Engineering who approved th
 The pipeline trusts the LLM's JSON output without validation. How would you validate extracted fields against a schema? How would you handle extraction failures — retry, dead-letter queue, or flag for human review? What's your strategy?
 
 **Your answer:**
+I would validate every extraction against a strict schema before writing the final record trying to catch missing keys, incorrect types, invalid date formats, etc. I would reject or quarantine anything that fails validation instead of trusting the raw LLM output. For transient model or Bedrock failures, I would do a limited amount fo reties. For repeated failures or low-confidence outputs, I would route a human-review queue with metadata like document ID so that record can be investigated without blocking the whole pipeline.
 
 ### DE-2. Pipeline at Scale
 
