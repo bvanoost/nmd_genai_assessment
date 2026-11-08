@@ -60,7 +60,7 @@ Edit both files with your candidate name and application prefix (`nmd-genai-<you
 
 ```bash
 cd terraform/live/candidate
-terraform init -backend-config="key=genai-assessment/<your-name>/terraform.tfstate"
+terraform init -backend-config="key=genai-assessment/brad-van-oosten"/terraform.tfstate"
 AWS_PROFILE=nmd-codescreen terraform apply -var-file=terraform.tfvars
 ```
 
