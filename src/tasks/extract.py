@@ -85,6 +85,7 @@ def extract_fields(event: dict) -> dict:
 
     extracted_fields = result.get("extracted_fields")
     confidence = result.get("extraction_confidence")
+    # TODO: check schema of extracted_fields matches requested fields
     if not isinstance(extracted_fields, dict):
         raise ValueError("Bedrock extraction response must include an extracted_fields object.")
     if (
