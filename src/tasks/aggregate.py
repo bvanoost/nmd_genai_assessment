@@ -20,8 +20,10 @@ def aggregate_results(event: dict) -> dict:
     preprocess = event.get("preprocess_result", {})
     classify = event.get("classify_result", {})
     extract = event.get("extract_result", {})
+
     document_id = preprocess.get("document_id")
     s3_bucket = preprocess.get("s3_bucket")
+
     if not isinstance(document_id, str) or not document_id:
         raise ValueError("Pipeline event must include a document_id.")
     if not isinstance(s3_bucket, str) or not s3_bucket:
@@ -32,9 +34,9 @@ def aggregate_results(event: dict) -> dict:
     summary = {
         "document_id": document_id,
         "document_type": classify.get("document_type", "unknown"),
-        "classification_confidence": classify.get("confidence", 0.0),
+        "classification_confidence": classify["classification_confidence"],
         "extracted_fields": extract.get("extracted_fields", {}),
-        "extraction_confidence": extract.get("confidence", 0.0),
+        "extraction_confidence": extract["extraction_confidence"],
         "status": "completed",
     }
 
